@@ -4,8 +4,8 @@ var _ = require('lodash');
 
 var utils = require('../utils');
 
-var fakeLatitudeBounds = {min: 0, max: 1};
-var fakeLongitudeBounds = {min: 0, max: 1};
+var fakeLatitudeBounds = {min: 50.632392, max: 50.633634};
+var fakeLongitudeBounds = {min: 3.019240, max: 3.021464};
 var fakeFloorBounds = {min: 0, max: 3};
 
 function sendFakePositionTo(userId) {
@@ -25,14 +25,14 @@ module.exports = function (socket) {
 
     socket.userId = _.get(socket, 'handshake.query.userId', null);
 
-    if (!socket.userId || socket.userId === 'notExist') {
-        socket.emit('error', new Error('User id not exist'));
+    if (!socket.userId || socket.userId === 'unknown') {
+        socket.emit('error', new Error('Unknown userId'));
         socket.disconnect(true);
     }
     else {
         var fakeIndoorLocationInterval = setInterval(function () {
             sendFakePositionTo(socket.userId);
-        }, 2000);
+        }, 5000);
         sendFakePositionTo(socket.userId);
     }
 
