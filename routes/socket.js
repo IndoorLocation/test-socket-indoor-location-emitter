@@ -4,15 +4,11 @@ var _ = require('lodash');
 
 var utils = require('../utils');
 
-var fakeLatitudeBounds = {min: 50.632392, max: 50.633634};
-var fakeLongitudeBounds = {min: 3.019240, max: 3.021464};
-var fakeFloorBounds = {min: 0, max: 3};
-
-function sendFakePositionTo(userId) {
+function sendFakePositionTo(userId, bbox, floorbox) {
     utils.sendIndoorLocationTo({
-        latitude: _.random(fakeLatitudeBounds.min, fakeLatitudeBounds.max, true),
-        longitude: _.random(fakeLongitudeBounds.min, fakeLongitudeBounds.max, true),
-        floor: _.random(fakeFloorBounds.min, fakeFloorBounds.max),
+        latitude: _.random(bbox[1], bbox[3], true),
+        longitude: _.random(bbox[0], bbox[2], true),
+        floor: _.random(floorbox[0], floorbox[1]),
         timestamp: Date.now(),
         accuracy: 1
     }, userId);
@@ -24,16 +20,21 @@ module.exports = function (socket) {
     });
 
     socket.userId = _.get(socket, 'handshake.query.userId', null);
+    // bbox as min lgn, min lat, max lng, max lat. Default is in Euratechnologies
+    socket.bbox = _.get(socket, 'handshake.query.bbox', [3.019240, 50.632392, 3.021464, 50.633634]);
+    // floorbox as min floor, max floor
+    socket.floorbox = _.get(socket, 'handshake.query.floorbox', [0, 3]);
 
     if (!socket.userId || socket.userId === 'unknown') {
-        socket.emit('error', new Error('Unknown userId'));
+        // Cannot use 'error' event https://stackoverflow.com/questions/33872052/how-to-emit-error-to-be-possible-catch-it-on-error-handler-on-client-side
+        socket.emit('socket error', new Error('Unknown userId'));
         socket.disconnect(true);
     }
     else {
-        var fakeIndoorLocationInterval = setInterval(function () {
-            sendFakePositionTo(socket.userId);
+        socket.fakeIndoorLocationInterval = setInterval(function () {
+            sendFakePositionTo(socket.userId, socket.bbox, socket.floorbox);
         }, 5000);
-        sendFakePositionTo(socket.userId);
+        sendFakePositionTo(socket.userId, socket.bbox, socket.floorbox);
     }
 
     socket.on('disconnect', function () {
@@ -41,6 +42,6 @@ module.exports = function (socket) {
             id: socket.id
         });
 
-        clearInterval(fakeIndoorLocationInterval);
+        clearInterval(socket.fakeIndoorLocationInterval);
     });
 };
