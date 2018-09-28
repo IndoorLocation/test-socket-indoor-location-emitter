@@ -3,6 +3,7 @@
 var _ = require('lodash');
 
 var utils = require('../utils');
+var config = require('../config/config');
 
 function sendFakePositionTo(userId, bbox, floorbox) {
     utils.sendIndoorLocationTo({
@@ -21,9 +22,9 @@ module.exports = function (socket) {
 
     socket.userId = _.get(socket, 'handshake.query.userId', null);
     // bbox as min lgn, min lat, max lng, max lat. Default is in Euratechnologies
-    socket.bbox = _.get(socket, 'handshake.query.bbox', [3.019240, 50.632392, 3.021464, 50.633634]);
+    socket.bbox = _.get(socket, 'handshake.query.bbox', config.bbox);
     // floorbox as min floor, max floor
-    socket.floorbox = _.get(socket, 'handshake.query.floorbox', [0, 3]);
+    socket.floorbox = _.get(socket, 'handshake.query.floorbox', config.floorbox);
 
     if (!socket.userId || socket.userId === 'unknown') {
         // Cannot use 'error' event https://stackoverflow.com/questions/33872052/how-to-emit-error-to-be-possible-catch-it-on-error-handler-on-client-side
